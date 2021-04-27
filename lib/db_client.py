@@ -17,6 +17,7 @@ class DBClient:
         self._db_url = db_url
 
     def connect(self, debug) -> None:
+        print('connect : {}'.format(self._db_url))
         self._engine = create_engine(
             self._db_url, echo=debug, future=True)
 
