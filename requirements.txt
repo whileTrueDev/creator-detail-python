@@ -1,6 +1,0 @@
-PyMySQL==1.0.2
-requests==2.25.1
-SQLAlchemy==1.4.11
-python-dotenv==0.17.0
-pandas==1.2.4
-numpy
