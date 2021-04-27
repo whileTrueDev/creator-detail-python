@@ -33,7 +33,7 @@
             "secrets": [
                 {
                     "valueFrom": "arn:aws:ssm:ap-northeast-2:803609402610:parameter/DB_CHARSET",
-                    "name": " DB_CHARSET"
+                    "name": "DB_CHARSET"
                 },
                 {
                     "valueFrom": "arn:aws:ssm:ap-northeast-2:803609402610:parameter/DB_DATABASE",
