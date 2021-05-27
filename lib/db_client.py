@@ -70,8 +70,8 @@ class DBClient:
             '''
         return self.do_query(query)
 
-    # platform에 따라 분기처리
-    def do_meta_query(self, params, platform) -> List:
+    # 트위치 방송 정보 쿼리
+    def do_meta_query(self, params) -> List:
         query = '''
         SELECT gameNameKr, gameName, C.*
         FROM
@@ -89,24 +89,30 @@ class DBClient:
         JOIN twitchGame tg
         USING (gameId)
         '''.format(params)
-        if platform == 'afreeca':
-            query = '''
-            SELECT categoryNameKr as categoryNameKr, categoryNameKr as categoryName, C.*
-            FROM
-            (
-                SELECT B.streamerId, B.broadId as streamId, viewCount as viewer, A.broadCategory as categoryId, startDate, hour(A.createdAt) as hour
-                FROM
-                (
-                    SELECT broadId, userId as streamerId, createdAt as startDate
-                    FROM AfreecaBroad
-                    WHERE userId IN ( {} ) AND createdAt > DATE_SUB(NOW(), INTERVAL 1 MONTH)
-                ) AS B
-                LEFT JOIN AfreecaBroadDetail AS A
-                USING (broadId)
-            ) AS C
-            JOIN AfreecaCategory ac
-            using (categoryId)
-            '''.format(params)
+        return self.do_query(query)
+
+    # 아프리카 방송 정보 쿼리
+    def do_afreeca_broad_query(self, params) -> List:
+        query = '''
+        SELECT B.streamerId, B.broadId as streamId, viewCount as viewer, A.broadCategory as categoryId, startDate, hour(A.createdAt) as hour
+        FROM
+        (
+            SELECT broadId, userId as streamerId, createdAt as startDate
+            FROM AfreecaBroad
+            WHERE userId IN ( {} ) AND createdAt > DATE_SUB(NOW(), INTERVAL 1 MONTH)
+        ) AS B
+        LEFT JOIN AfreecaBroadDetail AS A
+        USING (broadId)
+        WHERE A.broadCategory  IS NOT NULL
+        '''.format(params)
+        return self.do_query(query)
+
+    # 아프리카 카테고리별 정보 쿼리
+    def do_afreeca_category_query(self) -> List:
+        query = '''
+        SELECT categoryNameKr as categoryNameKr, categoryNameKr as categoryName, categoryId
+        FROM AfreecaCategory
+        '''
         return self.do_query(query)
 
     def do_clicks_query(self) -> List:

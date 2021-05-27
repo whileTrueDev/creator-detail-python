@@ -46,7 +46,12 @@ class Collector:
             impression_data.append((platformId, impression_time, creatorId))
         creators = creators[:-1]
 
-        meta_df = self.db_client.do_meta_query(creators, self.platform)
+        # afreeca의 경우, 각각 따로 쿼리 진행 후 merge수행
+        if self.platform == 'afreeca':
+            meta_df = self.get_afreeca_meta_data(creators)
+        else:
+            meta_df = self.db_client.do_meta_query(creators)
+
         meta_df = pd.DataFrame(meta_df, columns=[
             'gameNameKr', 'gameName', 'streamerId', 'streamId', 'viewer', 'gameId', 'startDate', 'hour'])
 
@@ -70,6 +75,27 @@ class Collector:
         print('[{}]  meta data 수집 종료 : {}s'.format(
             self.platform, round(end-start)))
         return meta_df, impression_data
+
+    # 아프리카 메타데이터 수집
+    def get_afreeca_meta_data(self, creators):
+        # afreeca meta data(broad)
+        af_meta_df = self.db_client.do_afreeca_broad_query(creators)
+        af_meta_df = pd.DataFrame(af_meta_df, columns=[
+            'streamerId', 'streamId', 'viewer', 'categoryId', 'startDate', 'hour'])
+
+        # afreeca afeeca category data (game)
+        af_category_df = self.db_client.do_afreeca_category_query()
+        af_category_df = pd.DataFrame(af_category_df, columns=[
+            'gameNameKr', 'gameName', 'categoryId']).set_index('categoryId')
+
+        merged_data = pd.merge(
+            af_category_df,
+            af_meta_df,
+            left_index=True,
+            right_on='categoryId',
+            how="right"
+        )
+        return merged_data
 
     # 디버깅용
     def get_csv_data(self):
