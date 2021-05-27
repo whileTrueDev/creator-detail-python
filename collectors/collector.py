@@ -51,9 +51,8 @@ class Collector:
             meta_df = self.get_afreeca_meta_data(creators)
         else:
             meta_df = self.db_client.do_meta_query(creators)
-
-        meta_df = pd.DataFrame(meta_df, columns=[
-            'gameNameKr', 'gameName', 'streamerId', 'streamId', 'viewer', 'gameId', 'startDate', 'hour'])
+            meta_df = pd.DataFrame(meta_df, columns=[
+                'gameNameKr', 'gameName', 'streamerId', 'streamId', 'viewer', 'gameId', 'startDate', 'hour'])
 
         if self._config.debug:
             meta_df.to_csv(
@@ -81,18 +80,18 @@ class Collector:
         # afreeca meta data(broad)
         af_meta_df = self.db_client.do_afreeca_broad_query(creators)
         af_meta_df = pd.DataFrame(af_meta_df, columns=[
-            'streamerId', 'streamId', 'viewer', 'categoryId', 'startDate', 'hour'])
+            'streamerId', 'streamId', 'viewer', 'gameId', 'startDate', 'hour'])
 
         # afreeca afeeca category data (game)
         af_category_df = self.db_client.do_afreeca_category_query()
         af_category_df = pd.DataFrame(af_category_df, columns=[
-            'gameNameKr', 'gameName', 'categoryId']).set_index('categoryId')
+            'gameNameKr', 'gameName', 'gameId']).set_index('gameId')
 
         merged_data = pd.merge(
             af_category_df,
             af_meta_df,
             left_index=True,
-            right_on='categoryId',
+            right_on='gameId',
             how="right"
         )
         return merged_data
