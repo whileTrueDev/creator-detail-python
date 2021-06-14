@@ -127,6 +127,7 @@ class Collector:
         merged_data['one'] = 1
         merged_data['rip'] = np.min(merged_data[['rip', 'one']].values, axis=1)
 
+        merged_data['creatorId'] = merged_data['creatorId'].astype(np.str)
         return merged_data[['rip', 'creatorId']]
 
     # 스트리머 - 방송별 변수 계산 [ streamerId | viewer | peakview | airtime]
@@ -137,13 +138,15 @@ class Collector:
         # column rename
         stream_data.columns = ['viewer', 'peakview', 'airtime']
 
-        # delete outliner
-        stream_data = stream_data[stream_data['airtime'] >= ROWS_PER_ONE_HOUR]
         grouped_data = stream_data.groupby('streamerId').agg({
             'viewer': np.mean,
             'peakview': 'max',
             'airtime': np.mean,
         })
+
+        # delete outliner -> 조건을 만족하는 방송이 존재하지 않음
+        grouped_data = grouped_data[grouped_data['airtime']
+                                    >= ROWS_PER_ONE_HOUR]
         # hour count
         grouped_data['airtime'] = grouped_data['airtime'] / ROWS_PER_ONE_HOUR
         grouped_data = np.round(grouped_data).astype('int32')
@@ -249,6 +252,7 @@ class Collector:
             right_index=True,
             how="left"
         )
+
         merge_target_df = [
             # [ streamerId | viewer | peakview | airtime]
             self.get_stream_data(meta_data),
@@ -275,14 +279,17 @@ class Collector:
             merged_data['airtime'].values * merged_data['viewer'].values * 6 * merged_data['rip'].values).astype('int32')
         merged_data['cost'] = np.round(
             merged_data['viewer'].values * 6 * PPP * merged_data['rip'].values).astype('int32')
-        merged_data = merged_data.fillna(0)
+
+        # drop null row
+        merged_data.dropna(inplace=True)
         # [ rip | creatorId | ctr | viewer | peakview | airtime | contentsGraphData | content | timeGraphData | openHour | impression | cost | follower ]
 
         if self._config.debug:
             merged_data.to_csv(
                 './data/save_{}.csv'.format(self.platform), encoding='utf-8')
         else:
-            self.save(merged_data)
+            if not len(merged_data) == 0:
+                self.save(merged_data)
         end = time.time()
         print('[{}] 상세정보 수집 완료 : {}s'.format(
             self.platform, round(end-start)))
